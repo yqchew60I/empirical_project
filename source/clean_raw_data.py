@@ -94,3 +94,42 @@ print(msoa_valid[msoa_valid['MSOA21CD'].isna()])
 #drop MSOAs that do not exist on Census 2021 
 msoa_valid = msoa_valid.dropna(subset=['MSOA21CD'])
 print(msoa_valid.shape)
+
+#------------------------------------------------------------------#
+#GENERATE NEW VARIABLE UNEMPLOYMENT RATE#
+file1 = "census2021-ts066-msoa.csv"
+EconomicActivity = pd.read_csv(RAW_DATA + file1)
+print(EconomicActivity.columns)
+
+EconomicActivity['Unemployment Rate'] = \
+    (EconomicActivity['Economic activity status: Economically active (excluding full-time students): Unemployed']/\
+    EconomicActivity['Economic activity status: Economically active (excluding full-time students)'])*100
+print(f"EconomicActivity: \n{EconomicActivity}")
+
+#------------------------------------------------------------------#
+#GENERATE NEW VARIABLE PROPORTION OF POPLN AGED 65+ #
+file1 = "census2021-ts007a-msoa.csv"
+AgeGroup = pd.read_csv(RAW_DATA + file1)
+print(AgeGroup.columns)
+
+AgeGroup['Age_abv65'] = AgeGroup['Age: Aged 65 to 69 years'] \
+    + AgeGroup['Age: Aged 70 to 74 years'] \
+    + AgeGroup['Age: Aged 75 to 79 years'] \
+    + AgeGroup['Age: Aged 80 to 84 years'] \
+    + AgeGroup['Age: Aged 85 years and over']
+print(f"AgeGroup: \n {AgeGroup.head(10)}")
+
+AgeGroup['Proportion_age_abv65'] = \
+    (AgeGroup['Age_abv65']/AgeGroup['Age: Total'])*100
+print(f"AgeGroup: \n {AgeGroup.head(10)}")
+
+#------------------------------------------------------------------#
+#GENERATE NEW VARIABLE PROPORTION OF WHITE POPULATION #
+file1 = "census2021-ts021-msoa.csv"
+Ethnicity = pd.read_csv(RAW_DATA + file1)
+print(Ethnicity.columns)
+
+Ethnicity['Proportion_white'] = \
+    (Ethnicity['Ethnic group: White']/ \
+    Ethnicity['Ethnic group: Total: All usual residents'])*100
+print(f"Ethicity: {Ethnicity.head(10)}")
