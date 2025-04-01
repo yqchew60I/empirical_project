@@ -1,6 +1,7 @@
 # MAIN DIRECTORY LOCATIONS#
 ROOT = "/Users/yqchew/Documents/DataScienceInEconomics/EmpiricalProject/"
 RAW_DATA = ROOT+"original_data_sources/"
+SOURCE = ROOT+"source/"
 
 #IMPORTS#
 import numpy as np
@@ -73,7 +74,7 @@ lsoa_crime_count['LSOA name_x'] = lsoa_crime_count['LSOA name_x'].str.strip()
 lsoa_crime_count.loc[lsoa_crime_count['MSOA21NM'].isnull(), 'MSOA21NM'] = lsoa_crime_count['LSOA name_x'].str[:-1]
 lsoa_crime_count['MSOA21NM'].fillna(lsoa_crime_count['LSOA name_x'].str[:-1], inplace=True)
 
-# Check if there are still any missing values in 'MSOA21NM' after the update
+#Check if there are still any missing values in 'MSOA21NM' after the update
 print(f"Update on Number of LSOAs missing MSOA data: {lsoa_crime_count['MSOA21NM'].isnull().sum()}")
 
 #------------------------------------------------------------------#
@@ -133,3 +134,82 @@ Ethnicity['Proportion_white'] = \
     (Ethnicity['Ethnic group: White']/ \
     Ethnicity['Ethnic group: Total: All usual residents'])*100
 print(f"Ethicity: {Ethnicity.head(10)}")
+
+
+#------------------------------------------------------------------#
+#CREATING FINAL DATASET#
+emp_proj_dataset_clean = msoa_valid.copy()
+emp_proj_dataset_clean= emp_proj_dataset_clean.drop(columns = ['MSOA21NMW', 'ObjectId'])
+
+new_column_order = ['MSOA21NM', 'MSOA21CD', 'Crime Count']
+emp_proj_dataset_clean = emp_proj_dataset_clean[new_column_order]
+
+#Merge unemployment data to final dataset
+EconomicActivity = EconomicActivity.rename(columns={'geography': 'MSOA21NM'})
+EconomicActivity = EconomicActivity.rename(columns={'geography code': 'MSOA21CD'})
+print(EconomicActivity.columns)
+
+emp_proj_dataset_clean = pd.merge(
+    emp_proj_dataset_clean, EconomicActivity, on=['MSOA21NM', 'MSOA21CD'],
+    how='outer')
+
+#Keep only unemployment variable from EconomicActivity
+emp_proj_dataset_clean = emp_proj_dataset_clean[['MSOA21NM','MSOA21CD','Crime Count', 'Unemployment Rate']]
+print(emp_proj_dataset_clean)
+
+#Merge proportion of population age 65+ data to final dataset
+AgeGroup = AgeGroup.rename(columns={'geography': 'MSOA21NM'})
+AgeGroup = AgeGroup.rename(columns={'geography code': 'MSOA21CD'})
+
+emp_proj_dataset_clean = pd.merge(
+    emp_proj_dataset_clean, AgeGroup, 
+    on=['MSOA21NM', 'MSOA21CD'], how='outer')
+
+#Keep only proportion of popln age 65+ variable from AgeGroup
+emp_proj_dataset_clean=\
+    emp_proj_dataset_clean[['MSOA21NM','MSOA21CD',
+    'Crime Count', 'Unemployment Rate', 'Proportion_age_abv65']]
+print(emp_proj_dataset_clean)
+
+#Merge proportion of white popln to final dataset
+Ethnicity = Ethnicity.rename(columns={'geography': 'MSOA21NM'})
+Ethnicity = Ethnicity.rename(columns={'geography code': 'MSOA21CD'})
+
+#Keep only total popln and proportion of white popln from Ethnicity
+Ethnicity= Ethnicity[['MSOA21NM', 'MSOA21CD', 
+'Ethnic group: Total: All usual residents', 'Proportion_white']]
+
+#Merge Ethnicity to final dataset
+emp_proj_dataset_clean=\
+    pd.merge(emp_proj_dataset_clean, Ethnicity,
+    on=['MSOA21CD', 'MSOA21NM'], how='outer')
+
+#Merge popln density to final dataset
+file1 = "census2021-ts006-msoa.csv"
+Population_Density = pd.read_csv(RAW_DATA + file1)
+
+Population_Density = Population_Density.rename(
+    columns={'geography': 'MSOA21NM'})
+Population_Density = Population_Density.rename(
+    columns={'geography code': 'MSOA21CD'})
+print(f"Popln Density: \n{Population_Density}")
+
+emp_proj_dataset_clean= pd.merge(
+    emp_proj_dataset_clean, Population_Density,
+    on=['MSOA21CD', 'MSOA21NM'], how='outer')
+
+emp_proj_dataset_clean= emp_proj_dataset_clean.drop(
+    columns=['date'])
+
+emp_proj_dataset_clean= emp_proj_dataset_clean.rename(
+    columns={'Population Density: Persons per square kilometre; measures: Value': 
+    'Population Density: Persons per square kilometre'})
+
+#Generate crime rate per 1000 resident
+emp_proj_dataset_clean['Crime Rate per 1000 resident'] = \
+(emp_proj_dataset_clean['Crime Count']/ \
+ emp_proj_dataset_clean['Ethnic group: Total: All usual residents'])*1000
+
+print(f"All: \n{emp_proj_dataset_clean}")
+
+emp_proj_dataset_clean.to_csv(SOURCE + 'emp_proj_data.csv', index=False)
