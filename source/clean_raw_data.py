@@ -128,12 +128,21 @@ print(f"AgeGroup: \n {AgeGroup.head(10)}")
 #GENERATE NEW VARIABLE PROPORTION OF WHITE POPULATION #
 file1 = "census2021-ts021-msoa.csv"
 Ethnicity = pd.read_csv(RAW_DATA + file1)
-print(Ethnicity.columns)
 
 Ethnicity['Proportion_white'] = \
     (Ethnicity['Ethnic group: White']/ \
     Ethnicity['Ethnic group: Total: All usual residents'])*100
 print(f"Ethicity: {Ethnicity.head(10)}")
+
+#------------------------------------------------------------------#
+#GENERATE NEW VARIABLE PROPORTION OF POPULATION WITH LEVEL 4 EDUCATION#
+file1 = "census2021-ts067-msoa.csv"
+Educational_Attainment = pd.read_csv(RAW_DATA + file1)
+
+Educational_Attainment['Proportion_Level4_Edu']=\
+(Educational_Attainment['Highest level of qualification: Level 4 qualifications and above']/\
+ Educational_Attainment['Highest level of qualification: Total: All usual residents aged 16 years and over'])*100
+print(f"Educational_Attainment:\n{Educational_Attainment.head(10)}")
 
 
 #------------------------------------------------------------------#
@@ -175,11 +184,9 @@ print(emp_proj_dataset_clean)
 Ethnicity = Ethnicity.rename(columns={'geography': 'MSOA21NM'})
 Ethnicity = Ethnicity.rename(columns={'geography code': 'MSOA21CD'})
 
-#Keep only total popln and proportion of white popln from Ethnicity
 Ethnicity= Ethnicity[['MSOA21NM', 'MSOA21CD', 
 'Ethnic group: Total: All usual residents', 'Proportion_white']]
 
-#Merge Ethnicity to final dataset
 emp_proj_dataset_clean=\
     pd.merge(emp_proj_dataset_clean, Ethnicity,
     on=['MSOA21CD', 'MSOA21NM'], how='outer')
@@ -204,6 +211,18 @@ emp_proj_dataset_clean= emp_proj_dataset_clean.drop(
 emp_proj_dataset_clean= emp_proj_dataset_clean.rename(
     columns={'Population Density: Persons per square kilometre; measures: Value': 
     'Population Density: Persons per square kilometre'})
+
+#Merge Proportion_Level4_Edu to final dataset
+Educational_Attainment = Educational_Attainment.rename(columns={'geography': 'MSOA21NM'})
+Educational_Attainment = Educational_Attainment.rename(columns={'geography code': 'MSOA21CD'})
+
+Educational_Attainment = Educational_Attainment[['MSOA21NM','MSOA21CD', 
+    'Proportion_Level4_Edu']]
+
+emp_proj_dataset_clean = pd.merge(
+    emp_proj_dataset_clean, Educational_Attainment,
+    on=['MSOA21CD', 'MSOA21NM'], how='outer')
+
 
 #Generate crime rate per 1000 resident
 emp_proj_dataset_clean['Crime Rate per 1000 resident'] = \
