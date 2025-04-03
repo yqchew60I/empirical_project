@@ -26,6 +26,10 @@ crime_count_desc = emp_proj_data['Crime Count'].describe()
 with open(RESULTS + 'crime_count_descriptive_stats.txt', 'w') as f:
     f.write(str(crime_count_desc))
 
+highest_crime = emp_proj_data.loc[emp_proj_data['Crime Count'].idxmax()]
+with open(RESULTS + 'crime_count_descriptive_stats.txt', 'a') as f:
+    f.write(f"MSOA with highest Crime Count:\n{highest_crime}")
+
 #Crime distribution across MSOAs
 plt.figure(figsize=(10, 6))
 plt.hist(emp_proj_data['Crime Count'], bins=100, color='red')
@@ -105,7 +109,15 @@ result3 = model3.fit(cov_type='HC1')
 with open(RESULTS + 'regression3.txt', 'w') as f:
     f.write(str(result3.summary()))
 
+#Only include Unemployment_White
+print(X_with_controls.columns)
+X_with_controls = X_with_controls[['Unemployment Rate', 'Proportion_age_abv65', 'Proportion_white',
+       'Population_density', 'Proportion_Level4_Edu', 'Unemployment_White']]
+model4 = sm.OLS(Y, sm.add_constant(X_with_controls))
+result4 = model4.fit(cov_type='HC1')
 
+with open(RESULTS + 'regression4.txt', 'w') as f:
+    f.write(str(result4.summary()))
 
 #Causal Forest
 X = emp_proj_data[['Proportion_age_abv65', 'Proportion_white', 
@@ -120,6 +132,17 @@ cf = CausalForestDML(
 cf.fit(Y=Y, T=T, X=X, W=None)
 ate = cf.ate(X)
 ate_ci = cf.ate_interval(X)
+
+print("Number of Trees", cf.n_estimators)
+
+# Access the fitted GradientBoostingRegressor for both outcome and treatment models
+outcome_model = cf.model_y
+treatment_model = cf.model_t
+
+print("Max depth of trees in the outcome model:", outcome_model.get_params()['max_depth'])
+print("Max depth of trees in the treatment model:", treatment_model.get_params()['max_depth'])
+
+
 
 with open(RESULTS + 'CausalForest_ATE.txt', 'w') as f:
     f.write(f"Estimated ATE:{ate} \nConfidence interval for ATE:{ate_ci}")
