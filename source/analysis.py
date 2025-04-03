@@ -125,8 +125,8 @@ X = emp_proj_data[['Proportion_age_abv65', 'Proportion_white',
 T = emp_proj_data['Unemployment Rate']
 
 cf = CausalForestDML(
-    model_y=GradientBoostingRegressor(),
-    model_t=GradientBoostingRegressor(),
+    model_y=GradientBoostingRegressor(random_state=123),
+    model_t=GradientBoostingRegressor(random_state=123),
     random_state=123)
 
 cf.fit(Y=Y, T=T, X=X, W=None)
@@ -141,8 +141,6 @@ treatment_model = cf.model_t
 
 print("Max depth of trees in the outcome model:", outcome_model.get_params()['max_depth'])
 print("Max depth of trees in the treatment model:", treatment_model.get_params()['max_depth'])
-
-
 
 with open(RESULTS + 'CausalForest_ATE.txt', 'w') as f:
     f.write(f"Estimated ATE:{ate} \nConfidence interval for ATE:{ate_ci}")
