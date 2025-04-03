@@ -151,7 +151,7 @@ print("Confidence interval for ATE:", ate_ci)
 hte = cf.effect(X)
 
 plt.figure(figsize=(10, 6))
-plt.hist(hte, bins=50, color='lightblue', edgecolor='grey')
+plt.hist(hte, bins=50, color='red', edgecolor='grey')
 plt.axvline(x=ate, color='red', linestyle='--', label='ATE')
 plt.xlabel('Treatment Effects')
 plt.ylabel('Count')
