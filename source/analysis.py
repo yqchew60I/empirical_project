@@ -79,11 +79,13 @@ plt.savefig(RESULTS + 'regression1_plot.png', dpi=600)
 w1 = emp_proj_data['Proportion_age_abv65']
 w2 = emp_proj_data['Proportion_white']
 w3 = emp_proj_data['Population Density: Persons per square kilometre']
+w4 = emp_proj_data['Proportion_Level4_Edu']
 
 X_with_controls = pd.DataFrame({'Unemployment Rate': X,
     'Proportion_age_abv65': w1,
     'Proportion_white': w2,
-    'Population_density': w3})
+    'Population_density': w3,
+    'Proportion_Level4_Edu': w4})
 
 model2 = sm.OLS(Y, sm.add_constant(X_with_controls))
 result2 = model2.fit(cov_type='HC1')
@@ -99,33 +101,33 @@ X_with_controls['Unemployment_White']= \
 
 model3 = sm.OLS(Y, sm.add_constant(X_with_controls))
 result3 = model3.fit(cov_type='HC1')
-print(result3.summary())
+
+with open(RESULTS + 'regression3.txt', 'w') as f:
+    f.write(str(result3.summary()))
+
+
 
 #Causal Forest
 X = emp_proj_data[['Proportion_age_abv65', 'Proportion_white', 
-    'Population Density: Persons per square kilometre']]
+    'Population Density: Persons per square kilometre', 'Proportion_Level4_Edu']]
 T = emp_proj_data['Unemployment Rate']
-
-X_train, X_test, y_train, y_test, t_train, t_test =\
- train_test_split(X, Y, T, test_size=0.3, random_state=42)
 
 cf = CausalForestDML(
     model_y=GradientBoostingRegressor(),
     model_t=GradientBoostingRegressor(),
-    random_state=123
-)
+    random_state=123)
 
-cf.fit(Y=y_train, T=t_train, X=X_train, W=None)
-
-ate = cf.ate(X_train)
-print("Estimated ATE:", ate)
-
-"""
 cf.fit(Y=Y, T=T, X=X, W=None)
+ate = cf.ate(X)
 ate_ci = cf.ate_interval(X)
+
+with open(RESULTS + 'CausalForest_ATE.txt', 'w') as f:
+    f.write(f"Estimated ATE:{ate} \nConfidence interval for ATE:{ate_ci}")
+
+print("Estimated ATE:", ate)
 print("Confidence interval for ATE:", ate_ci)
 
-hte = cf.effect(X_test)
+hte = cf.effect(X)
 
 plt.figure(figsize=(10, 6))
 plt.hist(hte, bins=50, color='lightblue', edgecolor='grey')
@@ -136,4 +138,3 @@ plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.5)
 plt.legend()
 plt.savefig(RESULTS + 'HTE_histogram.png')
 plt.clf()
-"""
